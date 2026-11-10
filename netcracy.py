@@ -38,20 +38,19 @@ def enforce_monitor_mode(interface):
 # ============================================================================
 
 def handle_rogue_ap(args):
-    # Parse remaining arguments sequentially from the remaining token stack
     target_device = args[0] if len(args) >= 1 else "wlan0"
     chosen_template = args[1] if len(args) >= 2 else "starbucks"
     chosen_ssid = args[2] if len(args) >= 3 else "Starbucks_WiFi"
     
     print(f"\n[+] Netcracy -> Initializing Rogue AP Subsystems...")
-    print(f"[*] Binding Wireless Interface: {target_device}")
-    print(f"[*] Selected Portal Template:   {chosen_template}")
-    print(f"[*] Broadcasting Target SSID:   {chosen_ssid}")
+    print(f"[*] Mapped Wireless Interface: {target_device}")
+    print(f"[*] Target Configuration Context: {chosen_template} | {chosen_ssid}")
     time.sleep(1)
     
-    # Launch wifipumpkin3 natively using standard flag arguments
-    cmd = f"sudo wifipumpkin3 -i {target_device} --bssid 00:11:22:33:44:55 --ssid '{chosen_ssid}'"
+    # UPDATED: Simplified string layout using only the verified interface flag
+    cmd = f"sudo wifipumpkin3 -i {target_device}"
     os.system(cmd)
+    
 
 def handle_wlan0mon(args):
     target_device = args[0] if len(args) >= 1 else "wlan0"
