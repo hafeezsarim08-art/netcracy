@@ -50,7 +50,7 @@ def handle_rogue_ap(args):
     time.sleep(1)
     
     # Launch wifipumpkin3 natively using standard flag arguments
-    cmd = f"sudo wifipumpkin3 --interface {target_device} --bssid 00:11:22:33:44:55 --ssid '{chosen_ssid}'"
+    cmd = f"sudo wifipumpkin3 -i {target_device} --bssid 00:11:22:33:44:55 --ssid '{chosen_ssid}'"
     os.system(cmd)
 
 def handle_wlan0mon(args):
