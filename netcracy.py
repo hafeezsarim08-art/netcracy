@@ -136,7 +136,7 @@ def handle_wireless_survey(args):
     target_device = args[0] if len(args) >= 1 else "wlan0"
     print(f"\n[+] Netcracy -> Deploying interactive environment survey on {target_device}...")
     enforce_monitor_mode(target_device)
-    os.system(f"sudo wifite --kill --i {target_device}")
+    os.system(f"sudo wifite --kill -i {target_device}")
 
 def handle_spectrum_monitor(args):
     target_device = args[0] if len(args) >= 1 else "wlan0"
