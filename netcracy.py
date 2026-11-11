@@ -421,19 +421,38 @@ COMMAND_MAP = {
 ("run", "config", "export"): handle_config_export,
 }
 def main():
-if len(sys.argv) < 2:
-display_menu_help()
-sys.exit(1)
-tokens = [str(arg).lower() for arg in sys.argv[1:]]
-matched = False
-for command_tuple, function_handler in COMMAND_MAP.items():
-cmd_len = len(command_tuple)
-if len(tokens) >= cmd_len and tuple(tokens[:cmd_len]) == command_tuple:
-remaining_args = tokens[cmd_len:]
-try:
-function_handler(remaining_args)
-except KeyboardInterrupt:
-print("\n\n[*] Restoring network environment daemons...")
+    if len(sys.argv) < 2:
+        display_menu_help()
+        sys.exit(1)
+
+    # Sanitize command arguments into a consistent lowercase list
+    tokens = [str(arg).lower() for arg in sys.argv[1:]]
+
+    # Dynamically match token chains against our structural lookup dictionary keys
+    matched = False
+    for command_tuple, function_handler in COMMAND_MAP.items():
+        cmd_len = len(command_tuple)
+        if len(tokens) >= cmd_len and tuple(tokens[:cmd_len]) == command_tuple:
+            # Isolate the remaining arguments to pass directly to the target utility
+            remaining_args = tokens[cmd_len:]
+            try:
+                function_handler(remaining_args)
+            except KeyboardInterrupt:
+                print("\n\n[*] Intercepted break code execution. Restoring network environment daemons...")
+                subprocess.run(["sudo", "systemctl", "start", "NetworkManager"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            matched = True
+            break
+
+    if not matched:
+        print("[-] Error: Unrecognized string parameter sequence combination.")
+        display_menu_help()
+
+if __name__ == "__main__":
+    if os.getuid() != 0:
+        print("[-] Critical Privilege Error: This interface wrapper requires administrative privileges (sudo).")
+        sys.exit(1)
+    main()
+    )
 subprocess.run(["sudo", "systemctl", "start", "NetworkManager"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 matched = True
 break
