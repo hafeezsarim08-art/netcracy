@@ -452,15 +452,4 @@ if __name__ == "__main__":
         print("[-] Critical Privilege Error: This interface wrapper requires administrative privileges (sudo).")
         sys.exit(1)
     main()
-    )
-subprocess.run(["sudo", "systemctl", "start", "NetworkManager"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-matched = True
-break
-if not matched:
-print("[-] Error: Unrecognized string parameter sequence combination.")
-display_menu_help()
-if name == "main":
-if os.getuid() != 0:
-print("[-] Critical Privilege Error: This interface wrapper requires administrative privileges (sudo).")
-sys.exit(1)
-main()
+    
