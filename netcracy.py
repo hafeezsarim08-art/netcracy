@@ -76,6 +76,10 @@ def handle_rogue_ap(args):
     print(f"[*] Interface : {target_device}")
     print(f"[*] Template  : {chosen_template}")
     print(f"[*] SSID      : {chosen_ssid}\n")
+        # Clear conflicting background services so DHCP and hostapd bind cleanly
+    subprocess.run(["sudo", "systemctl", "stop", "NetworkManager"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["sudo", "pkill", "dnsmasq"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["sudo", "pkill", "hostapd"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     auto_commands = (
         f"set interface {target_device}\n"
