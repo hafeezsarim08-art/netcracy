@@ -84,6 +84,9 @@ def handle_rogue_ap(args):
         f"set captiveflask.template {chosen_template}; "
         f"start"
     )
+    subprocess.run(["sudo", "ip", "addr", "flush", "dev", target_device], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["sudo", "ip", "addr", "add", "10.0.0.1/24", "dev", target_device], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["sudo", "ip", "link", "set", target_device, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     process = subprocess.Popen(
         ["sudo", "wifipumpkin3", "-x", xpulp_cmd],
