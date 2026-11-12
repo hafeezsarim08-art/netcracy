@@ -68,7 +68,6 @@ def enforce_monitor_mode(interface):
 #               COMMAND ENGINE EXECUTION FUNCTIONS
 # ============================================================================
 def handle_rogue_ap(args):
-     def handle_rogue_ap(args):
     target_device = args[0] if len(args) >= 1 else "wlan0"
     chosen_template = args[1] if len(args) >= 2 else "starbucks"
     chosen_ssid = args[2] if len(args) >= 3 else "Starbucks_WiFi"
