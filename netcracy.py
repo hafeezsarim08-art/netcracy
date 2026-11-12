@@ -68,16 +68,22 @@ def enforce_monitor_mode(interface):
 #               COMMAND ENGINE EXECUTION FUNCTIONS
 # ============================================================================
 def handle_rogue_ap(args):
-    target_device = args[0] if len(args) >= 1 else "wlan0"
-    chosen_template = args[1] if len(args) >= 2 else "starbucks"
-    chosen_ssid = args[2] if len(args) >= 3 else "Starbucks_WiFi"
+    target_device = args if len(args) >= 1 else "wlan0"
+    chosen_template = args if len(args) >= 2 else "starbucks"
+    chosen_ssid = args if len(args) >= 3 else "Starbucks_WiFi"
     
     print(f"\n[+] Netcracy -> Initializing Rogue AP Subsystems...")
     print(f"[*] Interface : {target_device}")
     print(f"[*] Template  : {chosen_template}")
     print(f"[*] SSID      : {chosen_ssid}\n")
     
-    auto_commands = f"set interface {target_device}\nset ssid {chosen_ssid}\nset proxy captiveflask\nset captiveflask.{chosen_template} true\nstart\n"
+    auto_commands = (
+        f"set interface {target_device}\n"
+        f"set ssid {chosen_ssid}\n"
+        f"set proxy captiveflask\n"
+        f"set captiveflask.template {chosen_template}\n"
+        f"start\n"
+    )
     
     process = subprocess.Popen(
         ["sudo", "wifipumpkin3"],
@@ -91,18 +97,26 @@ def handle_rogue_ap(args):
     process.stdin.write(auto_commands)
     process.stdin.flush()
     
+    # Keywords to allow through the output filter
+    allowed_tags = [
+        "[+]", "[*]", "[-]", "[!]", 
+        "hostapd", "dhcpd", "captiveflask", 
+        "pydns", "dns", "http", "post", "get"
+    ]
+    
     try:
         for line in process.stdout:
-            clean_line = line.strip()
-            # Filter out the ASCII art and wp3> prompt, showing only live status logs
-            if any(tag in clean_line for tag in ["[+]", "[*]", "[-]", "[!]", "hostapd", "dhcpd", "captiveflask"]):
-                print(clean_line)
+            clean_line = line.replace("wp3 >", "").strip()
+            
+            # Check if any allowed keyword matches (case-insensitive)
+            if any(tag in clean_line.lower() for tag in allowed_tags):
+                if "unknown plugin" not in clean_line.lower():
+                    print(clean_line)
     except KeyboardInterrupt:
         print("\n[*] Stopping Rogue AP subsystems...")
         process.terminate()
         
-    
-
+        
 def handle_wlan0mon(args):
     target_device = args[0] if len(args) >= 1 else "wlan0"
     print(f"\n[+] Netcracy -> Spawning Spectrum Interceptor on {target_device}...")
