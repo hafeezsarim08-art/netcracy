@@ -101,14 +101,15 @@ def handle_rogue_ap(args):
             return
 
     if chosen_template:
+        if chosen_template:
         chosen_proxy = "captiveflask"
     else:
-        proxies = ["eviltq3", "captiveflask", "pumpkinproxy"]
+        proxies = ["evilqr3", "captiveflask", "pumpkinproxy", "phishkin3"]
         print("\n[?] Select Proxy Engine:")
         for idx, p in enumerate(proxies, 1):
             print(f"    {idx}. {p}")
-        p_choice = input("    Choice [1-3]: ").strip()
-        chosen_proxy = proxies[int(p_choice) - 1] if p_choice in ["1", "2", "3"] else "captiveflask"
+        p_choice = input("    Choice [1-4]: ").strip()
+        chosen_proxy = proxies[int(p_choice) - 1] if p_choice in ["1", "2", "3", "4"] else "captiveflask"
 
         if chosen_proxy == "captiveflask":
             templates = get_captiveflask_templates()
@@ -122,6 +123,7 @@ def handle_rogue_ap(args):
                 chosen_template = t_choice
             else:
                 chosen_template = templates
+                
 
     print(f"\n[+] Netcracy -> Initializing Rogue AP on {target_device} (SSID: {chosen_ssid} | Proxy: {chosen_proxy})...")
 
@@ -163,7 +165,7 @@ def handle_rogue_ap(args):
         os._exit(0)
 
     print("[*] Waiting for AP subsystems to initialize...")
-    subsystems = ("hostapd", "pydns", "pydhcp", "captiveflask", "eviltq3", "pumpkinproxy", "error")
+    subsystems = ("hostapd", "pydns", "pydhcp", "captiveflask", "evilqr3", "pumpkinproxy", "phishkin3","error")
     shown = set()
     start_time = time.time()
 
