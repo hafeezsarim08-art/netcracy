@@ -99,9 +99,7 @@ def handle_rogue_ap(args):
         if not chosen_ssid:
             print("[-] Error: SSID parameter required for Rogue AP.")
             return
-
     if chosen_template:
-        if chosen_template:
         chosen_proxy = "captiveflask"
     else:
         proxies = ["evilqr3", "captiveflask", "pumpkinproxy", "phishkin3"]
@@ -123,7 +121,6 @@ def handle_rogue_ap(args):
                 chosen_template = t_choice
             else:
                 chosen_template = templates
-                
 
     print(f"\n[+] Netcracy -> Initializing Rogue AP on {target_device} (SSID: {chosen_ssid} | Proxy: {chosen_proxy})...")
 
@@ -165,7 +162,7 @@ def handle_rogue_ap(args):
         os._exit(0)
 
     print("[*] Waiting for AP subsystems to initialize...")
-    subsystems = ("hostapd", "pydns", "pydhcp", "captiveflask", "evilqr3", "pumpkinproxy", "phishkin3","error")
+    subsystems = ("hostapd", "pydns", "pydhcp", "captiveflask", "evilqr3", "pumpkinproxy", "phishkin3", "error")
     shown = set()
     start_time = time.time()
 
