@@ -93,8 +93,8 @@ def handle_rogue_ap(args):
     target_device = args if len(args) >= 1 else "wlan0"
     chosen_ssid = args if len(args) >= 2 else ""
     chosen_template = args if len(args) >= 3 else ""
-    
- if not chosen_ssid:
+ 
+      if not chosen_ssid:
         chosen_ssid = input("[?] Enter target SSID: ").strip()
         if not chosen_ssid:
             print("[-] Error: SSID parameter required for Rogue AP.")
