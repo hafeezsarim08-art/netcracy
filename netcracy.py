@@ -90,9 +90,9 @@ def get_captiveflask_templates():
 import pty
 
 def handle_rogue_ap(args):
-    target_device = args(0) if len(args) >= 1 else "wlan0"
-    chosen_ssid = args(1) if len(args) >= 2 else ""
-    chosen_template = args(2) if len(args) >= 3 else ""
+    target_device = args[0] if len(args) >= 1 else "wlan0"
+    chosen_ssid = args[1] if len(args) >= 2 else ""
+    chosen_template = args[2] if len(args) >= 3 else ""
  
     if not chosen_ssid:
         chosen_ssid = input("[?] Enter target SSID: ").strip()
