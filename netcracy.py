@@ -90,12 +90,11 @@ def get_captiveflask_templates():
 import pty
 
 def handle_rogue_ap(args):
-    target_device = args[0] if len(args) >= 1 else "wlan0"
-    chosen_ssid = args[1] if len(args) >= 2 else ""
-    chosen_template = args[2] if len(args) >= 3 else ""
-    
+    target_device = args if len(args) >= 1 else "wlan0"
+    chosen_ssid = args if len(args) >= 2 else ""
+    chosen_template = args if len(args) >= 3 else ""
 
-   if not chosen_ssid:
+    if not chosen_ssid:
         chosen_ssid = input("[?] Enter target SSID: ").strip()
         if not chosen_ssid:
             print("[-] Error: SSID parameter required for Rogue AP.")
@@ -140,7 +139,6 @@ def handle_rogue_ap(args):
     if os.path.exists(log_path):
         os.remove(log_path)
 
-    # Fork a detached background process to hold the PTY open so wifipumpkin3 never sees EOF
     pid = os.fork()
     if pid == 0:
         os.setsid()
@@ -164,7 +162,6 @@ def handle_rogue_ap(args):
                     break
         os._exit(0)
 
-    # Parent process: watch /tmp/wifipumpkin_bg.log for up to 8 seconds and print subsystem statuses
     print("[*] Waiting for AP subsystems to initialize...")
     subsystems = ("hostapd", "pydns", "pydhcp", "captiveflask", "eviltq3", "pumpkinproxy", "error")
     shown = set()
