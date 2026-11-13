@@ -138,7 +138,7 @@ def handle_rogue_ap(args):
     if os.path.exists(log_path):
         os.remove(log_path)
 
-    pid = os.fork()
+        pid = os.fork()
     if pid == 0:
         os.setsid()
         master_fd, slave_fd = pty.openpty()
@@ -150,18 +150,23 @@ def handle_rogue_ap(args):
             close_fds=True
         )
         os.close(slave_fd)
+        # ---> PUT IT RIGHT HERE (8 spaces indentation) <---
         with open(log_path, "w") as log_f:
             while proc.poll() is None:
                 try:
                     data = os.read(master_fd, 1024)
-                    if data:
-                        log_f.write(data.decode("utf-8", errors="ignore"))
-                        log_f.flush()
+                    if not data:
+                        break
+                    log_f.write(data.decode("utf-8", errors="ignore"))
+                    log_f.flush()
                 except OSError:
                     break
+        os.close(master_fd)
         os._exit(0)
+        # ---> END OF REPLACEMENT <---
 
     print("[*] Waiting for AP subsystems to initialize...")
+    
     subsystems = ("hostapd", "pydns", "pydhcp", "captiveflask", "evilqr3", "pumpkinproxy", "phishkin3", "error")
     shown = set()
     start_time = time.time()
