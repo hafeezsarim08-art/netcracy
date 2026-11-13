@@ -67,7 +67,24 @@ def enforce_monitor_mode(interface):
 # ============================================================================
 #               COMMAND ENGINE EXECUTION FUNCTIONS
 # ============================================================================
-
+def get_captiveflask_templates():
+    """Scans wifipumpkin3 and custom_captiveflask directories for available templates."""
+    templates = set()
+    search_paths = [
+        os.path.expanduser("~/.config/wifipumpkin3/plugins/captiveflask"),
+        "/root/.config/wifipumpkin3/plugins/captiveflask",
+        "/usr/share/wifipumpkin3/plugins/captiveflask",
+        "/usr/local/share/wifipumpkin3/plugins/captiveflask",
+    ]
+    
+    for base_path in search_paths:
+        if os.path.isdir(base_path):
+            for item in os.listdir(base_path):
+                if item.endswith(".py") and not item.startswith("__"):
+                    templates.add(item[:-3])
+                    
+    return sorted(list(templates)) if templates else ["DarkLogin", "loginPage", "FlaskDemo"]
+    
 def handle_rogue_ap(args):
     target_device = args[0] if len(args) >= 1 else "wlan0"
     chosen_ssid = args[1] if len(args) >= 2 else ""
