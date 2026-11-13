@@ -68,13 +68,106 @@ def enforce_monitor_mode(interface):
 #               COMMAND ENGINE EXECUTION FUNCTIONS
 # ============================================================================
 
+import os
+import subprocess
+import tempfile
+
+def get_captiveflask_templates():
+    """Scans wifipumpkin3 and custom_captiveflask directories for available templates."""
+    templates = set()
+    search_paths = [
+        os.path.expanduser("~/.config/wifipumpkin3/plugins/captiveflask"),
+        "/usr/share/wifipumpkin3/plugins/captiveflask",
+        "/usr/local/share/wifipumpkin3/plugins/captiveflask",
+    ]
+    
+    for base_path in search_paths:
+        if os.path.isdir(base_path):
+            for item in os.listdir(base_path):
+                # Captiveflask templates are stored as .py plugin files (excluding __init__.py)
+                if item.endswith(".py") and not item.startswith("__"):
+                    templates.add(item[:-3])  # Strip '.py' extension
+                    
+    return sorted(list(templates)) if templates else ["DarkLogin", "loginPage", "FlaskDemo"]
+
 def handle_rogue_ap(args):
-    target_device = args if len(args) >= 1 else "wlan0"
-    chosen_template = args if len(args) >= 2 else "starbucks"
-    chosen_ssid = args if len(args) >= 3 else "Starbucks_WiFi"
-    print(f"\n[+] Netcracy -> Initializing Rogue AP Subsystems...")
-    cmd = f"sudo wifipumpkin3 -i {target_device}"
-    os.system(cmd)
+    # 1. Interface (defaults to wlan0 if not passed in args)
+    target_device = args[0] if len(args) >= 1 else "wlan0"
+
+    # 2. SSID (uses args[1] if passed, otherwise prompts the user)
+    if len(args) >= 2:
+        chosen_ssid = args[1]
+    else:
+        chosen_ssid = input("[?] Enter custom SSID: ").strip()
+        while not chosen_ssid:
+            chosen_ssid = input("[!] SSID cannot be empty. Enter custom SSID: ").strip()
+
+    # 3. Proxy Picker (eviltq3, captiveflask, pumpkinproxy)
+    proxies = ["eviltq3", "captiveflask", "pumpkinproxy"]
+    if len(args) >= 3 and args[2] in proxies:
+        chosen_proxy = args[2]
+    else:
+        print("\n[?] Select Proxy Mode:")
+        for idx, p in enumerate(proxies, 1):
+            print(f"    {idx}. {p}")
+        choice = input("    Choice [1-3]: ").strip()
+        chosen_proxy = proxies[int(choice) - 1] if choice in ["1", "2", "3"] else "captiveflask"
+
+    # 4. Template Picker (if captiveflask is selected, pulls from custom_captiveflask)
+    chosen_template = None
+    if chosen_proxy == "captiveflask":
+        if len(args) >= 4:
+            chosen_template = args[3]
+        else:
+            available_templates = get_captiveflask_templates()
+            print("\n[?] Select CaptiveFlask Template (from misc.custom_captiveflask):")
+            for idx, tmpl in enumerate(available_templates, 1):
+                print(f"    {idx}. {tmpl}")
+            
+            t_choice = input(f"    Choice [1-{len(available_templates)}] or type name: ").strip()
+            if t_choice.isdigit() and 1 <= int(t_choice) <= len(available_templates):
+                chosen_template = available_templates[int(t_choice) - 1]
+            elif t_choice:
+                chosen_template = t_choice
+            else:
+                chosen_template = available_templates[0]
+
+    # 5. Build the .pulp script commands
+    pulp_lines = [
+        f"set interface {target_device}",
+        f"set ssid {chosen_ssid}",
+        f"set proxy {chosen_proxy}",
+    ]
+    
+    if chosen_proxy == "captiveflask" and chosen_template:
+        pulp_lines.append(f"set captiveflask.{chosen_template} true")
+        
+    pulp_lines.append("start\n")
+    pulp_commands = "\n".join(pulp_lines)
+
+    # 6. Write to a temporary .pulp script and launch in background
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".pulp", delete=False) as temp_pulp:
+        temp_pulp.write(pulp_commands)
+        pulp_path = temp_pulp.name
+
+    print(f"\n[+] Netcracy -> Starting Rogue AP in the background...")
+    print(f"    Interface : {target_device}")
+    print(f"    SSID      : {chosen_ssid}")
+    print(f"    Proxy     : {chosen_proxy}")
+    if chosen_template:
+        print(f"    Template  : {chosen_template}")
+
+    log_file = open("wifipumpkin_bg.log", "w")
+    process = subprocess.Popen(
+        ["sudo", "wifipumpkin3", "-p", pulp_path],
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        start_new_session=True
+    )
+
+    print(f"[+] Running behind the scenes (PID: {process.pid}). Logs -> wifipumpkin_bg.log")
+    return process
+    
     
 def handle_wlan0mon(args):
     target_device = args[0] if len(args) >= 1 else "wlan0"
